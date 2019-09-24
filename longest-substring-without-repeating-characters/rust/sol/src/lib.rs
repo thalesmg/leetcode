@@ -6,20 +6,17 @@ impl Solution {
     pub fn length_of_longest_substring(s: String) -> i32 {
         s.chars()
             .enumerate()
-            .fold((0, 0, HashMap::new()), |(mut max, mut current, mut seen), (i, c)| {
-                if let Some(mut old_index) = seen.insert(c, i) {
-                    current = (i - old_index) as i32;
-                    seen.retain(|_, j| j > &mut old_index);
-                    (max, current, seen)
+            .fold((0, 0, HashMap::new()), |(mut max, mut start, mut seen), (current_index, c)| {
+                if let Some(old_index) = seen.insert(c, current_index) {
+                    start = std::cmp::max(start, old_index + 1);
+                    max = std::cmp::max(max, current_index - start + 1);
+                    (max, start, seen)
                 } else {
-                    current += 1;
-                    if current > max {
-                        max = current;
-                    }
-                    (max, current, seen)
+                    max = std::cmp::max(max, current_index - start + 1);
+                    (max, start, seen)
                 }
             })
-            .0
+            .0 as i32
     }
 }
 
