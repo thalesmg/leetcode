@@ -4,32 +4,24 @@ use std::collections::HashMap;
 
 impl Solution {
     pub fn subarray_sum(nums: Vec<i32>, k: i32) -> i32 {
-        let sums =
-            nums
+        let mut empty = HashMap::new();
+        empty.insert(0, 1);
+
+        nums
             .iter()
-            .enumerate()
-            .fold((0, HashMap::new()), |(mut sum, mut acc), (i, x)| {
+            .fold((0, 0, empty), |(mut count, mut sum, mut acc), x| {
                 sum += x;
-                let indices = acc.entry(sum).or_insert(Vec::new());
-                indices.push(i);
-                (sum, acc)
+
+                if let Some(symmetric_count) = acc.get(&(sum - k)) {
+                    count += symmetric_count;
+                }
+
+                let curr_count = acc.entry(sum).or_insert(0);
+                *curr_count += 1;
+
+                (count, sum, acc)
             })
-            .1;
-
-        let mut counts = 0;
-
-        for (sum, indices) in &sums {
-            if sum == &k {
-                counts += indices.len();
-            }
-            let empty = Vec::new();
-            let symmetric_indices = sums.get(&(sum - k)).unwrap_or(&empty);
-            for i in indices {
-                counts += symmetric_indices.iter().filter(|j| j < &i).count();
-            }
-        }
-
-        counts as i32
+            .0
     }
 }
 
