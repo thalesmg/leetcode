@@ -1,72 +1,46 @@
 struct Solution;
 
-type Palindrome = (usize, usize);
-
 impl Solution {
     pub fn longest_palindrome(full: String) -> String {
-        let mut palindromes = Vec::new();
-        let mut farthest = 0;
-
-        for (i, _) in full.chars().enumerate() {
-            if i < farthest {
-                continue
-            };
-
-            let mut current = (i, i);
-            while let Some(bigger) = Solution::try_increase_palindrome(&full, current) {
-                let (m, n) = bigger;
-                farthest = std::cmp::max(n, farthest);
-
-                if bigger == current {
-                    break
-                } else {
-                    current = bigger;
-                }
-            }
-            palindromes.push(current);
-        }
-
-        dbg!(&palindromes);
-
-        if let Some((s, e)) = palindromes.into_iter().max_by_key(|(s, e)| e - s) {
-            full[s..=e].to_string()
-        } else {
-            String::new()
-        }
-    }
-
-    pub fn try_increase_palindrome(full: &str, palindrome: Palindrome) -> Option<Palindrome> {
-        let (start, end) = palindrome;
-        let full_str: String = full.to_string();
         let len = full.len();
-        let next_end = if end + 1 >= len { end } else { end + 1 };
-        let next_start = if start == 0 { 0 } else { start - 1 };
+        let mut start = 0;
+        let mut end = 0;
 
-        if let Some(slice) = full_str.get(next_start..=next_end) {
-            if Solution::is_palindrome(slice) {
-                return Some((next_start, next_end));
-            }
-        };
+        // centers between or at chars
+        for i in 0..(len as i32) {
+            // at letter
+            let len1 = Solution::expand_around_center(&full, i, i);
+            // between letters
+            let len2 = Solution::expand_around_center(&full, i, i + 1);
+            let max_len = std::cmp::max(len1, len2);
 
-        if let Some(slice) = full_str.get(start..=next_end) {
-            if Solution::is_palindrome(slice) {
-                return Some((start, next_end));
-            }
-        };
-
-        None
-    }
-
-    pub fn is_palindrome(s: &str) -> bool {
-        let reverse = s.chars().rev();
-
-        for (a, b) in s.to_string().chars().zip(reverse) {
-            if a != b {
-                return false;
+            if (max_len > end - start) {
+                start = i - (max_len as i32 - 1) / 2;
+                end = i + (max_len as i32) / 2;
             }
         }
 
-        true
+        full.get((start as usize)..=(end as usize)).unwrap_or("").to_string()
+    }
+
+    fn expand_around_center(full: &str, mut start: i32, mut end: i32) -> i32 {
+        let len = full.len();
+
+        while start >= 0 && end < len as i32 {
+            let s = start as usize;
+            let e = end as usize;
+
+            match (full.get(s..=s), full.get(e..=e)) {
+                (Some(a), Some(b))
+                    if a == b => {
+                    start -= 1;
+                    end += 1;
+                },
+                _ => break,
+            }
+        }
+
+        end - start - 1
     }
 }
 
@@ -144,30 +118,5 @@ mod tests {
         let input = "ababababababa".to_string();
         let expected = input.clone();
         assert_eq!(expected, Solution::longest_palindrome(input));
-    }
-
-    #[test]
-    fn is_palindrome() {
-        assert!(Solution::is_palindrome(""));
-        assert!(Solution::is_palindrome("a"));
-        assert!(Solution::is_palindrome("aa"));
-        assert!(!Solution::is_palindrome("ba"));
-        assert!(Solution::is_palindrome("bab"));
-        assert!(Solution::is_palindrome("baab"));
-    }
-
-    #[test]
-    fn try_increase_palindrome() {
-        let full = "babad";
-        assert_eq!(Solution::try_increase_palindrome(full, (0, 0)), None);
-        assert_eq!(
-            Solution::try_increase_palindrome(full, (0, 1)),
-            Some((0, 2))
-        );
-        assert_eq!(
-            Solution::try_increase_palindrome(full, (1, 1)),
-            Some((0, 2))
-        );
-        assert_eq!(Solution::try_increase_palindrome(full, (0, 2)), None);
     }
 }
